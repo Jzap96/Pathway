@@ -1,48 +1,54 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    //variables
-    //1. access level: public or private
-    //2. type: int (e.g., 2, 4, 123, 3456, etc.), float (e.g, 2.5, 3.67, etc.)
-    //3. name: (1) start w/ lowercase (2) if it is multiple words, then the other
-    //4. optional: give it an initial value
     private float horizontalInput;
     private float verticalInput;
     private float speed;
-   
-    public GameObject bullet;
-    BoxCollider myBodyCollider;
+    private float horizontalScreenLimit;
+    private float verticalScreenLimit;
+
+    public GameObject Bullet;
+
+    [Header("Power Up")]
+    [SerializeField] AudioClip powerUp;
+    [SerializeField] [Range(0f, 1f)] float powerupVolume = 1f;
+
+    [Header("Power Down")]
+    [SerializeField] AudioClip powerDown;
+    [SerializeField] [Range(0f, 1f)] float powerVolume = 1f;
+
     // Start is called before the first frame update
     void Start()
     {
         speed = 6f;
-        myBodyCollider = GetComponent<BoxCollider>();
+        horizontalScreenLimit = 11.5f;
+        verticalScreenLimit = 7.5f;
     }
+
     // Update is called once per frame
     void Update()
     {
-        Moving();
+        Movement();
         Shooting();
     }
-    void Moving()
+
+    void Movement()
     {
         horizontalInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxis("Vertical");
+
         transform.Translate(new Vector3(horizontalInput, verticalInput, 0) * Time.deltaTime * speed);
 
-        if (transform.position.x > 11.5f || transform.position.x <= -11.5f)
+        if (transform.position.x > horizontalScreenLimit || transform.position.x <= -horizontalScreenLimit) 
         {
-            transform.position = new Vector3(transform.position.x * -1,
-            transform.position.y, 0);
+            transform.position = new Vector3(transform.position.x * -1, transform.position.y, 0);
         }
-        if (transform.position.y > 1f || transform.position.y <= -6f)
+        if (transform.position.y > verticalScreenLimit || transform.position.y <= -verticalScreenLimit)
         {
-            transform.position = new Vector3(transform.position.x,
-            transform.position.y * -0, 0);
+            transform.position = new Vector3(transform.position.x, transform.position.y * -1, 0);
         }
     }
 
@@ -50,26 +56,49 @@ public class Player : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            Instantiate(bullet, transform.position + new Vector3(0, 1, 0), Quaternion.identity);
+            Instantiate(Bullet, transform.position + new Vector3(0, 1, 0), Quaternion.identity);
         }
     }
 
-    void Die()
+    void CoinPickup()
     {
-       FindObjectOfType<GameSession>().ProcessPlayerDeath();
+        FindObjectOfType<Score>().ScorePlusOne();
     }
 
     void OnTriggerEnter(Collider other)
     {
-        
-        if(other.tag == "Enemy")
+        if (other.tag == "Coin")
         {
-            Die();
+            CoinPickup();
+        }
+        else if(other.tag =="Power Up")
+        {
+            PlayPowerUpClip();
+        }
+        else if(other.tag =="Enemy")
+        {
+            PlayPowerDownClip();
+        }
+        
+         void PlayPowerUpClip()
+        {
+            PlayClip(powerUp, powerupVolume);
+        }
+
+         void PlayPowerDownClip()
+        {
+            PlayClip(powerDown, powerVolume);
+        }
+
+        void PlayClip(AudioClip clip, float volume)
+        {
+            if (clip != null)
+            {
+                Vector3 cameraPos = Camera.main.transform.position;
+                AudioSource.PlayClipAtPoint(clip, cameraPos, volume);
+            }
         }
     }
-    
-
 
 
 }
-
